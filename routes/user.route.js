@@ -3,6 +3,8 @@ let router = express.Router();
 const { validationResult, body, param } = require("express-validator")
 const utilities = require('../utilities/auth.js');
 const userController = require('../controllers/user.controller.js');
+const authController = require('../controllers/auth.controller.js');
+
 
 router.route("/register").post(
   body("name").notEmpty().escape(),
@@ -19,10 +21,24 @@ router.route("/register").post(
   }
 )
 
+router.route("/login").post(
+    body("email").isEmail().normalizeEmail(),
+    body("password").notEmpty(),
+    (req, res) => {
+        const errors = validationResult(req);
+        if(errors.isEmpty()) {
+            userController.logIn(req, res);
+        } else{
+            res.status(404).json({ errors: errors.array() });
+        }
+    }
+)
+
 router.route("/findAllUsers").get(
     (req, res) => {
         const errors = validationResult(req);
         if(errors.isEmpty()) {
+            authController.verifyToken(req, res);
             userController.findAll(req, res);
         }
         else{
@@ -50,6 +66,7 @@ router.route("/changeBlock").put(
     (req, res) => {
         const errors = validationResult(req, res);
         if(errors.isEmpty()){
+            authController.verifyToken(req, res);
             userController.changeBlock(req, res);
         } else {
             res.status(404).json({ errors: errors.array() });
@@ -67,6 +84,7 @@ router.route("/createHouse").post(
     (req, res) => {
         const errors = validationResult(req, res);
         if(errors.isEmpty()){
+            authController.verifyToken(req, res);
             userController.createHouse(req, res);
         } else {
             res.status(404).json({ errors: errors.array() });
@@ -78,6 +96,7 @@ router.route("/housesToApprove").get(
     (req, res) => {
         const errors = validationResult(req);
         if(errors.isEmpty()) {
+            authController.verifyToken(req, res);
             userController.findHousesToApprove(req, res);
         }
         else{
@@ -99,12 +118,12 @@ router.route("/housesApproved").get(
 )
 
 router.route("/approveHouse").put(
-    body("adminID").isNumeric().notEmpty(),
     body("houseToApprove").isNumeric().notEmpty(),
     body("approve").isBoolean().notEmpty(),
     (req, res) => {
         const errors = validationResult(req);
         if(errors.isEmpty()) {
+            authController.verifyToken(req, res);
             userController.approveHouse(req, res);
         }
         else{

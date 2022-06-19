@@ -9,8 +9,6 @@ const sequelize = new Sequelize.Sequelize(process.env.DATABASE, process.env.USER
 class Comments extends Model { }
 
 Comments.init({
-    userID: DataTypes.INTEGER,
-    postID: DataTypes.INTEGER,
     content: DataTypes.STRING
 }, { sequelize, timestamps: false, modelName: 'comments' })
 

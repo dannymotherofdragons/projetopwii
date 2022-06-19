@@ -11,7 +11,6 @@ const sequelize = new Sequelize.Sequelize(process.env.DATABASE, process.env.USER
 class Events extends Model { }
 
 Events.init({
-    userID: DataTypes.INTEGER,
     location: DataTypes.STRING,
     date: DataTypes.DATE,
     eventType: DataTypes.INTEGER,

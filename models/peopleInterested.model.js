@@ -9,8 +9,6 @@ const sequelize = new Sequelize.Sequelize(process.env.DATABASE, process.env.USER
 class peopleInteresteds extends Model { }
 
 peopleInteresteds.init({
-    eventID: DataTypes.INTEGER,
-    people: DataTypes.INTEGER
 }, { sequelize, timestamps: false, modelName: 'peopleInteresteds'})
 
 sequelize.sync().then().catch(error => {

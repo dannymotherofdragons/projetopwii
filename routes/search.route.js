@@ -18,4 +18,4 @@ router.route("/rating").get(
     }
 )
 
-modules.exports = router;
+module.exports = router;

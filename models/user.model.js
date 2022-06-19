@@ -17,7 +17,14 @@ Users.init({
     name: DataTypes.STRING,
     email: DataTypes.STRING,
     password: DataTypes.STRING,
-    userType: DataTypes.INTEGER,
+    userType: {
+        type: DataTypes.ENUM('admin', 'regular', 'host'),
+        defaultValue: 'regular',
+        validate: {isIn: {
+            args:[['admin', 'regular', 'host']],
+            msg: "Allowed roles: admin, regular or host"
+        }}
+    },
     is_blocked: DataTypes.BOOLEAN
 }, { sequelize, timestamps: false, modelName: 'users' })
 

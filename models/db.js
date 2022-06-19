@@ -23,7 +23,6 @@ db.roomType = require("./roomType.model.js");
 db.peopleInterested = require("./peopleInterested.model.js");
 db.hostApprove = require("./hostApprove.model.js");
 db.comments = require("./comments.model.js");
-db.adminApprove = require("./adminApprove.model.js");
 
 
 db.sequelize.sync()
