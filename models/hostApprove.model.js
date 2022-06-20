@@ -9,7 +9,6 @@ const sequelize = new Sequelize.Sequelize(process.env.DATABASE, process.env.USER
 class hostApproves extends Model { }
 
 hostApproves.init({
-    userID: DataTypes.INTEGER,
     approve: DataTypes.BOOLEAN
 }, { sequelize, timestamps: false, modelName: 'hostApproves'})
 

@@ -1,10 +1,11 @@
-const {Sequelize, Model, DataTypes} = require('sequelize');
+const { Sequelize, Model, DataTypes } = require('sequelize');
 const db = require('./db.js');
 const { Houses } = require('./houses.model.js');
 const { Events } = require('./events.model.js');
 const { Comments } = require('./comments.model.js');
 const { Ratings } = require('./rating.model.js');
 const { peopleInteresteds } = require('./peopleInterested.model.js');
+const { hostApproves } = require('./hostApprove.model.js');
 
 const sequelize = new Sequelize.Sequelize(process.env.DATABASE, process.env.USER, process.env.PASSWORD, {
     host: process.env.HOST,
@@ -20,10 +21,12 @@ Users.init({
     userType: {
         type: DataTypes.ENUM('admin', 'regular', 'host'),
         defaultValue: 'regular',
-        validate: {isIn: {
-            args:[['admin', 'regular', 'host']],
-            msg: "Allowed roles: admin, regular or host"
-        }}
+        validate: {
+            isIn: {
+                args: [['admin', 'regular', 'host']],
+                msg: "Allowed roles: admin, regular or host"
+            }
+        }
     },
     is_blocked: DataTypes.BOOLEAN
 }, { sequelize, timestamps: false, modelName: 'users' })
@@ -42,6 +45,9 @@ Ratings.belongsTo(Users, { foreignKey: 'id_users' })
 
 Users.hasMany(peopleInteresteds, { foreignKey: 'id_users' })
 peopleInteresteds.belongsTo(Users, { foreignKey: 'id_users' })
+
+Users.hasMany(hostApproves, { foreignKey: 'id_users' })
+hostApproves.belongsTo(Users, { foreignKey: 'id_users' })
 
 sequelize.sync().then().catch(error => {
     console.log(error);

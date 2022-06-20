@@ -74,8 +74,37 @@ router.route("/changeBlock").put(
     }
 )
 
+router.route("/createEvent").post(
+    body("location").isString().notEmpty(),
+    body("date").isString().notEmpty(),
+    body("eventType").isString().notEmpty(),
+    (req, res) => {
+        const errors = validationResult(req, res);
+        if(errors.isEmpty()){
+            authController.verifyToken(req, res);
+            userController.createEvent(req, res);
+        } else {
+            res.status(404).json({ errors: errors.array() });
+        }
+    }
+)
+
+router.route("/approveEvent").put(
+    body("eventoToApprove").isNumeric().notEmpty(),
+    body("approve").isBoolean().notEmpty(),
+    (req, res) => {
+        const errors = validationResult(req);
+        if(errors.isEmpty()) {
+            authController.verifyToken(req, res);
+            userController.approveEvent(req, res);
+        }
+        else{
+            res.status(404).json({ errors: errors.array() })
+        }
+    }
+)
+
 router.route("/createHouse").post(
-    body("creatorID").isNumeric().notEmpty(),
     body("location").notEmpty(),
     body("description").notEmpty(),
     body("priceTag").isNumeric().notEmpty(),
@@ -87,6 +116,62 @@ router.route("/createHouse").post(
             authController.verifyToken(req, res);
             userController.createHouse(req, res);
         } else {
+            res.status(404).json({ errors: errors.array() });
+        }
+    }
+)
+
+router.route("/changeAvailability").put(
+    body("house").isNumeric().notEmpty(),
+    body("available").isBoolean().notEmpty(),
+    (req, res) => {
+        const errors = validationResult(req, res);
+        if(errors.isEmpty()){
+            authController.verifyToken(req, res);
+            userController.changeHouseAvailability(req, res);
+        } else {
+            res.status(404).json({ errors: errors.array() });
+        }
+    }
+)
+
+router.route("/applyToHouse").post(
+    body("house").isNumeric().notEmpty(),
+    (req, res) => {
+        const errors = validationResult(req, res);
+        if(errors.isEmpty()){
+            authController.verifyToken(req, res);
+            userController.applyToHouse(req, res);
+        } else {
+            res.status(404).json({ errors: errors.array() });
+        }
+    }
+)
+
+router.route("/findApplications").get(
+    body("house").isNumeric().notEmpty(),
+    (req, res) => {
+        const errors = validationResult(req, res);
+        if(errors.isEmpty()){
+            authController.verifyToken(req, res);
+            userController.findApplications(req, res);
+        } else {
+            res.status(404).json({ errors: errors.array() });
+        }
+    }
+)
+
+router.route("/approveApplication").put(
+    body("house").isNumeric().notEmpty(),
+    body("userID").isNumeric().notEmpty(),
+    body("approve").isBoolean().notEmpty(),
+    (req, res) => {
+        const errors = validationResult(req);
+        if(errors.isEmpty()) {
+            authController.verifyToken(req, res);
+            userController.approveApplication(req, res);
+        }
+        else{
             res.status(404).json({ errors: errors.array() });
         }
     }
@@ -145,13 +230,13 @@ router.route("/houseRatings").get(
 )
 
 router.route("/rateHouse").post(
-    body("userID").isNumeric().notEmpty(),
     body("houseID").isNumeric().notEmpty(),
     body("rating").isNumeric().notEmpty(),
     body("comment"),
     (req, res) => {
         const errors = validationResult(req);
         if(errors.isEmpty()){
+            authController.verifyToken(req, res);
             userController.rateHouse(req, res);
         }
         else{

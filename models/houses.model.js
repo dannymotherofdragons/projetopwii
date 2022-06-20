@@ -3,6 +3,7 @@ const db = require('./db.js');
 const { roomTypes } = require('./roomType.model.js');
 const { Ratings } = require('./rating.model.js');
 const { Comments } = require('./comments.model.js');
+const { hostApproves } = require('./hostApprove.model');
 
 const sequelize = new Sequelize.Sequelize(process.env.DATABASE, process.env.USER, process.env.PASSWORD, {
     host: process.env.HOST,
@@ -30,6 +31,9 @@ Ratings.belongsTo(Houses, { foreignKey: 'id_houses' })
 
 Houses.hasMany(Comments, { foreignKey: 'id_houses' })
 Comments.belongsTo(Houses, { foreignKey: 'id_houses' })
+
+Houses.hasMany(hostApproves, { foreignKey: 'id_houses'})
+hostApproves.belongsTo(Houses, { foreignKey: 'id_houses'})
 
 sequelize.sync().then().catch(error => {
     console.log(error);

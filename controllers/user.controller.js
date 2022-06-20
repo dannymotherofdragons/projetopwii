@@ -7,6 +7,9 @@ const Houses = houseModel.Houses;
 const rateModel = require("../models/rating.model.js");
 const Ratings = rateModel.Ratings;
 
+const hostModel = require("../models/hostApprove.model.js");
+const hostApproves = hostModel.hostApproves;
+
 const jwt = require("jsonwebtoken"); //JWT tokens creation (sign())
 const bcrypt = require("bcryptjs"); //password encryption
 const config = require("../utilities/config.js");
@@ -172,12 +175,59 @@ else {
 }*/
 }
 
+exports.createEvent = async (req, res) => {
+    if (req.loggedUserRole !== "host"){
+        res.status(403).json({ success: false, msg: "This request requires HOST role"});
+    }
+
+    if(req.loggedUserRole.is_blocked === false)
+    {
+        //Criar evento
+
+        evento = await Event.create({
+            location: req.body.location,
+            date: req.body.date,
+            eventType: req.body.eventType,
+            isApproved: false
+        });
+        return res.status(200).json({
+            message: "Casa criada com sucesso"
+        });
+    }
+}
+
+exports.approveEvent = async (req, res) => {
+    if (req.loggedUserRole !== "admin") {
+        return res.status(403).json({ success: false, msg: "This request requires ADMIN role" })
+    }
+
+    const evento = await Event.findByPk(req.body.eventToApprove)
+
+    if (req.body.approve === false) {
+        evento.destroy();
+        res.status(200).json({
+            message: `Este evento não foi aprovada`
+        })
+    } else {
+        evento.update({
+            isApproved: req.body.approve
+        }, {
+            where: {
+                id: req.body.eventToApprove
+            }
+        }).then(data => {
+            res.status(200).json({
+                message: `O evento com id "${req.body.eventToApprove}" foi aprovado.`
+            })
+        })
+    }
+}
 
 exports.createHouse = async (req, res) => {
     if (req.loggedUserRole !== "host") {
         res.status(403).json({ success: false, msg: "This request requires HOST role!" })
     }
-    const posterUser = await Users.findByPk(req.body.creatorID);
+    const posterUser = await Users.findByPk(req.loggedUserId);
     if (posterUser.is_blocked === false) {
         //Criar casa
 
@@ -195,12 +245,13 @@ exports.createHouse = async (req, res) => {
         }
 
         house = await Houses.create({
-            host_id: req.body.creatorID,
+            id_users: req.loggedUserId,
             location: req.body.location,
+            availabilty: true,
             description: req.body.description,
             price_tag: req.body.priceTag,
             rooms: req.body.rooms,
-            roomType: roomTypes,
+            room_type: roomTypes,
             isApproved: false
         });
         return res.status(200).json({
@@ -246,6 +297,133 @@ exports.createHouse = async (req, res) => {
         })
     }
 }
+
+exports.changeHouseAvailability = async (req, res) => {
+    if (req.loggedUserRole !== "host") {
+        return res.status(403).json({ success: false, msg: "This request requires HOST role" })
+    }
+
+    const house = await Houses.findOne({
+        where: {
+            id: req.body.house,
+            id_users: req.loggedUserId
+        }
+    })
+
+    if (house != null) {
+        house.update({
+            availabilty: req.body.available
+        }, {
+            where: {
+                id: req.body.house
+            }
+        }).then(data => {
+            res.status(200).json({
+                message: `O estado da casa com id "${req.body.house}" é agora ${req.body.available}.`
+            })
+        })
+    }
+}
+
+exports.applyToHouse = async (req, res) => {
+    if (req.loggedUserRole !== "regular") {
+        return res.status(403).json({ success: false, msg: "This request requires REGULAR role" })
+    }
+
+    const house = await Houses.findOne({
+        where: {
+            id: req.body.house
+        }
+    })
+
+    if (house.isApproved != true) {
+        return res.status(403).json({ msg: "Esta casa ainda não foi aprovada pelos moderadores" })
+    }
+
+    userApprove = await hostApproves.create({
+        id_users: req.loggedUserId,
+        id_houses: req.body.house,
+        approve: false
+    });
+    return res.status(200).json({
+        message: "aplicação criada com sucesso"
+    });
+}
+
+exports.approveApplication = async (req, res) => {
+    if (req.loggedUserRole != "host") {
+        return res.status(403).json({ success: false, msg: "THis request requires HOST role" })
+    }
+    const userApprove = await hostApproves.findOne({
+        where: {
+            id_users: req.body.userID,
+            id_houses: req.body.house
+        }
+    })
+
+    const house = await Houses.findOne({
+        where: {
+            id: req.body.house
+        }
+    })
+    
+    if (req.body.approve === true) {
+        userApprove.update({
+            approve: req.body.approve
+        }, {
+            where: {
+                id: userApprove.id
+            }
+        }).then(data => {
+            console.log()
+            house.update({
+                availabilty: false
+            }, {
+                where: {
+                    id: req.body.house
+                }
+            })
+            res.status(200).json({
+                message: `O user com id "${req.body.userID}" foi aprovado.`
+            })
+        })
+    } else {
+        userApprove.destroy();
+        return res.status(200).json({ message: "Aplicação não aprovada"});
+    }
+}
+
+exports.findApplications = async (req, res) => {
+    if (req.loggedUserRole !== "host") {
+        return res.status(403).json({ success: false, msg: "This request requires HOST role" })
+    }
+
+    const house = await Houses.findOne({
+        where: {
+            id: req.body.house
+        }
+    })
+
+    if (house.isApproved != true) {
+        return res.status(403).json({ msg: "Esta casa ainda não foi aprovada pelos moderadores" })
+    }
+
+    const applications = await hostApproves.findAll({
+        where: {
+            id_houses: house.id
+        }
+    })
+
+    if (applications) {
+        res.status(200).json(applications)
+    }
+    else {
+        res.status(400).json({
+            message: "Não foram encontradas aplicações"
+        })
+    }
+}
+
 exports.findApprovedHouses = async (req, res) => {
     try {
         const houses = await Houses.findAll({
@@ -373,13 +551,52 @@ exports.getHouseRatings = async (req, res) => {
 }
 
 exports.rateHouse = async (req, res) => {
-    const user = await Users.findByPk(req.body.userID);
+    if (req.loggedUserRole !== "regular") {
+        return res.status(403).json({ success: false, msg: "This request requires REGULAR role" })
+    }
+    const user = await Users.findByPk(req.loggedUserId);
 
     if (user.is_blocked === true) {
         return res.status(400).json({
             message: `Este user está bloqueado`
         })
     }
+    const house = await Houses.findByPk(req.body.houseID)
+
+    if (house.isApproved === true) {
+
+        const ratings = await Ratings.findAll({
+            where: {
+                id_houses: req.body.houseID,
+                id_users: req.loggedUserId
+            }
+        })
+
+        console.log(ratings);
+        if (ratings.length > 0) {
+            return res.status(400).json({
+                message: `O user só pode dar uma classificação`
+            })
+        }
+        if (req.body.rating > 5) {
+            req.body.rating = 5
+        }
+        //Dar Rating
+        rating = await Ratings.create({
+            id_users: req.loggedUserId,
+            id_houses: req.body.houseID,
+            rating: req.body.rating,
+            comment: req.body.comment
+        });
+        return res.status(200).json({
+            message: "Classificação foi dada"
+        });
+    } else {
+        res.status(400).json({
+            message: `Esta casa não foi aprovada`
+        })
+    }
+    /*
     if (user.userType === 1) {
         //pode dar rate
         const house = await Houses.findByPk(req.body.houseID)
@@ -422,5 +639,5 @@ exports.rateHouse = async (req, res) => {
         res.status(400).json({
             message: `Este user não tem permissão para dar ratings`
         })
-    }
+    } */
 }

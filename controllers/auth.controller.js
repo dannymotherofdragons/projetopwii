@@ -16,8 +16,6 @@ exports.verifyToken = (req, res, next) => {
         }
         req.loggedUserId = decoded.id;
         req.loggedUserRole = decoded.userType
-        console.log(decoded.id);
-        console.log(decoded.userType);
 
     })
 
